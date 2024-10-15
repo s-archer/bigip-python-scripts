@@ -7,6 +7,11 @@
 #
 # To estimate the performance of automation, after x number of apps have been deployed, 
 # the script adds one additional per-app deployment and then deletes it.
+#
+# Pre-Requisites.
+#  
+#  Requires AS3 v 3.50.1 or newer, with per-app functionality enabled.
+#
 
 import subprocess
 import time
@@ -57,9 +62,9 @@ def generate_json_body(app_list):
                     app['private_ip']
                 ],
                 "persistenceMethods": [],
-                "policyWAF": {
-                    "use": f"{app['app_short_name']}_basePolicy" 
-                },
+                # "policyWAF": {
+                #     "use": f"{app['app_short_name']}_basePolicy" 
+                # },
                 "profileMultiplex": {
                     "bigip": "/Common/oneconnect"
                 },
@@ -100,7 +105,11 @@ def generate_json_body(app_list):
         }
         
         if app['waf_enable']:
-            # app_data["basePolicy"] = {
+            # add policyWAF to the app
+            app_data[f"HTTPS_{app['app_short_name']}"]['policyWAF'] = {
+                "use": f"{app['app_short_name']}_basePolicy"
+            }
+            # add the WAF_policy to the declaration
             app_data[f"{app['app_short_name']}_basePolicy"] = {
                 "class": "WAF_Policy",
                 "url": "https://raw.githubusercontent.com/s-archer/waf_policies/master/owasp.json",
@@ -126,7 +135,7 @@ def generate_app_list(num_apps):
         protected = ""
         service_discovery_tag = f"{app_short_name}-tag"
         region = "eu-west-2"
-        waf_enable = True
+        waf_enable = False
 
         app = {
             "app_short_name": app_short_name,
